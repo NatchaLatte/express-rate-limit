@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from "express";
 import { rateLimit } from 'express-rate-limit'
 import dotenv from "dotenv";
+import { debug } from "util";
 
 dotenv.config();
 
@@ -11,6 +12,9 @@ const limiter = rateLimit({
 	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+	message: async (req: Request, res: Response) => {
+		res.redirect('https://github.com/NatchaLatte');
+	}
 });
 
 app.use(limiter);
@@ -18,6 +22,13 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");
 });
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
+const server = app.listen(port, () => {
+  console.log(`[server] Server is running at http://localhost:${port}`);
 });
+
+process.on('SIGTERM', () => {
+  debug('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+	debug('HTTP server closed');
+  })
+})
